@@ -1,0 +1,11 @@
+# агент (по ТЗ)
+openai==3.24.0
+requests==2.34.2
+beautifulsoup4==4.15.0
+python-dotenv==1.2.4
+tenacity==9.1.4
+# веб-сервис
+fastapi==0.142.2
+starlette==1.7.0
+pydantic==2.13.5
+uvicorn==0.54.0

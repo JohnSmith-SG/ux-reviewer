@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UX-рецензент сайта</title>
+<meta name="description" content="Вставьте ссылку — ИИ-агент прочитает страницу и даст UX-отчёт: достоинства, слабые места и 5 рекомендаций.">
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #fff; --ink: #1d2433; --muted: #667085; --line: #e4e7ec;
+    --accent: #3b5bdb; --accent-ink: #fff; --good: #2b8a3e; --bad: #c92a2a;
+    --hi: #c92a2a; --mid: #e67700; --lo: #5c7cfa; --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 920px; margin: 0 auto; padding: 40px 18px 60px; }
+  header h1 { margin: 0 0 6px; font-size: clamp(26px, 4vw, 34px); letter-spacing: -.02em; }
+  header p { margin: 0 0 24px; color: var(--muted); }
+  form { display: flex; gap: 10px; flex-wrap: wrap; background: var(--card); padding: 14px;
+         border: 1px solid var(--line); border-radius: var(--radius); }
+  input[type=url] { flex: 1 1 320px; min-width: 0; font: inherit; padding: 12px 14px;
+         border: 1px solid var(--line); border-radius: 10px; outline: none; }
+  input[type=url]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #3b5bdb22; }
+  button { font: inherit; font-weight: 600; padding: 12px 20px; border: 0; border-radius: 10px;
+           background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+  button:disabled { opacity: .6; cursor: progress; }
+  .hint { color: var(--muted); font-size: 14px; margin: 10px 4px 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+          padding: 22px; margin-top: 18px; }
+  .error { border-color: #ffc9c9; background: #fff5f5; color: var(--bad); }
+  .steps { list-style: none; padding: 0; margin: 0; }
+  .steps li { padding: 6px 0; color: var(--muted); }
+  .steps li.on { color: var(--ink); font-weight: 600; }
+  .steps li.done { color: var(--good); }
+  .top { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
+  .score { --p: 0; width: 104px; height: 104px; border-radius: 50%; flex: none;
+           background: conic-gradient(var(--accent) calc(var(--p) * 1%), var(--line) 0);
+           display: grid; place-items: center; }
+  .score b { width: 82px; height: 82px; border-radius: 50%; background: var(--card);
+             display: grid; place-items: center; font-size: 28px; }
+  .score small { font-size: 13px; color: var(--muted); font-weight: 400; }
+  .top h2 { margin: 0 0 4px; font-size: 20px; overflow-wrap: anywhere; }
+  .tag { display: inline-block; font-size: 13px; padding: 2px 10px; border-radius: 99px;
+         background: #edf2ff; color: var(--accent); margin-bottom: 8px; }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+  .cols h3, .recs h3 { margin: 0 0 10px; font-size: 17px; }
+  .cols ul { margin: 0; padding-left: 0; list-style: none; }
+  .cols li { padding: 7px 0 7px 28px; position: relative; border-top: 1px solid var(--line); }
+  .cols li:first-child { border-top: 0; }
+  .plus li::before { content: "✓"; color: var(--good); position: absolute; left: 4px; font-weight: 700; }
+  .minus li::before { content: "!"; color: var(--bad); position: absolute; left: 8px; font-weight: 700; }
+  .rec { display: grid; grid-template-columns: 34px 1fr; gap: 4px 12px; padding: 14px 0;
+         border-top: 1px solid var(--line); }
+  .rec:first-of-type { border-top: 0; }
+  .num { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: #fff;
+         display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+  .rec h4 { margin: 3px 0 2px; font-size: 16px; }
+  .rec p { margin: 0; }
+  .why { color: var(--muted); font-size: 14px; margin-top: 4px !important; }
+  .prio { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 99px; margin-left: 6px;
+          vertical-align: 2px; color: #fff; }
+  .p-высокий { background: var(--hi); } .p-средний { background: var(--mid); } .p-низкий { background: var(--lo); }
+  .meta { color: var(--muted); font-size: 13px; margin-top: 14px; display: flex; gap: 14px;
+          flex-wrap: wrap; justify-content: space-between; }
+  .link { background: none; color: var(--accent); padding: 0; font-weight: 600; }
+  footer { color: var(--muted); font-size: 13px; margin-top: 28px; text-align: center; }
+  footer a { color: inherit; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>UX-рецензент сайта</h1>
+    <p>Вставьте ссылку — ИИ-агент прочитает страницу и покажет, что в ней удобно, что мешает
+      посетителю и какие 5 изменений дадут больше всего пользы.</p>
+  </header>
+
+  <form id="f" autocomplete="off">
+    <input id="url" type="url" required placeholder="https://ваш-сайт.ru" inputmode="url"
+           aria-label="Адрес страницы">
+    <button id="go" type="submit">Проверить</button>
+  </form>
+  <p class="hint" id="limits">Агент читает текст и структуру страницы: заголовки, меню, кнопки,
+    формы. Дизайн и картинки он не видит.</p>
+
+  <section class="card" id="progress" hidden>
+    <ul class="steps">
+      <li data-s="0">Загружаю страницу</li>
+      <li data-s="1">Разбираю структуру: заголовки, меню, кнопки, формы</li>
+      <li data-s="2">UX-эксперт (gpt-4o) пишет отчёт</li>
+    </ul>
+  </section>
+
+  <section class="card error" id="err" hidden></section>
+
+  <section id="report" hidden>
+    <div class="card top">
+      <div class="score" id="score"><b><span id="scoreN"></span><small>/10</small></b></div>
+      <div>
+        <span class="tag" id="type"></span>
+        <h2 id="site"></h2>
+        <p id="summary" style="margin:0"></p>
+      </div>
+    </div>
+    <div class="card cols">
+      <div><h3>Достоинства</h3><ul class="plus" id="plus"></ul></div>
+      <div><h3>Слабые места</h3><ul class="minus" id="minus"></ul></div>
+    </div>
+    <div class="card recs">
+      <h3>5 рекомендаций</h3>
+      <div id="recs"></div>
+      <div class="meta">
+        <span id="meta"></span>
+        <button class="link" type="button" id="copy">Скопировать отчёт</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>Учебный проект: агент на Python · FastAPI · OpenAI-совместимый API ·
+    <a href="https://github.com/JohnSmith-SG/ux-reviewer">исходный код</a></footer>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text; return e; };
+let last = null, timers = [];
+
+function step(n) {
+  document.querySelectorAll('.steps li').forEach(li => {
+    const s = +li.dataset.s; li.className = s < n ? 'done' : s === n ? 'on' : '';
+  });
+}
+
+async function showLimits() {
+  try {
+    const r = await fetch('/api/limits'); if (!r.ok) return;
+    const d = await r.json();
+    $('limits').textContent = `Сегодня можно проверить ещё ${d.left} из ${d.per_ip} страниц. ` +
+      'Агент читает текст и структуру страницы — дизайн и картинки он не видит.';
+  } catch (_) {}
+}
+
+function render(d) {
+  last = d;
+  $('scoreN').textContent = d.score;
+  $('score').style.setProperty('--p', d.score * 10);
+  $('type').textContent = d.site_type;
+  $('site').textContent = d.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  $('summary').textContent = d.summary;
+  $('plus').replaceChildren(...d.strengths.map(s => el('li', '', s)));
+  $('minus').replaceChildren(...d.weaknesses.map(s => el('li', '', s)));
+  $('recs').replaceChildren(...d.recommendations.map((r, i) => {
+    const box = el('div', 'rec'), body = el('div');
+    box.append(el('span', 'num', i + 1), body);
+    const h = el('h4', '', r.title); h.append(el('span', 'prio p-' + r.priority, r.priority));
+    body.append(h, el('p', '', r.details), el('p', 'why', 'Основание: ' + r.evidence));
+    return box;
+  }));
+  $('meta').textContent = `${d.model.replace('openai/', '')} · ${d.seconds} с` +
+    (d.cached ? ' · из кэша (страницу уже проверяли за последние сутки)' : '');
+  $('report').hidden = false;
+  if (d.limits) $('limits').textContent = `Сегодня можно проверить ещё ${d.limits.left} из ${d.limits.per_ip} страниц.`;
+}
+
+$('f').addEventListener('submit', async e => {
+  e.preventDefault();
+  const url = $('url').value.trim(); if (!url) return;
+  $('go').disabled = true; $('err').hidden = true; $('report').hidden = true; $('progress').hidden = false;
+  step(0); timers = [setTimeout(() => step(1), 1500), setTimeout(() => step(2), 3500)];
+  try {
+    const r = await fetch('/api/review', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                           body: JSON.stringify({ url }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(typeof d.detail === 'string' ? d.detail : 'Не получилось проверить страницу');
+    render(d);
+  } catch (ex) {
+    $('err').textContent = ex.message; $('err').hidden = false;
+  } finally {
+    timers.forEach(clearTimeout); $('progress').hidden = true; $('go').disabled = false;
+  }
+});
+
+$('copy').addEventListener('click', async () => {
+  if (!last) return;
+  const d = last, t = [`UX-отчёт: ${d.url}`, `${d.site_type} · оценка ${d.score}/10`, '', d.summary, '',
+    'Достоинства:', ...d.strengths.map(s => '+ ' + s), '', 'Слабые места:', ...d.weaknesses.map(s => '− ' + s),
+    '', '5 рекомендаций:', ...d.recommendations.map((r, i) =>
+      `${i + 1}. [${r.priority}] ${r.title}\n   ${r.details}\n   Основание: ${r.evidence}`)].join('\n');
+  try { await navigator.clipboard.writeText(t); $('copy').textContent = 'Скопировано ✓'; }
+  catch (_) { $('copy').textContent = 'Не удалось скопировать'; }
+  setTimeout(() => $('copy').textContent = 'Скопировать отчёт', 2000);
+});
+
+const q = new URLSearchParams(location.search).get('url');
+if (q) $('url').value = q;
+showLimits();
+</script>
+</body>
+</html>
