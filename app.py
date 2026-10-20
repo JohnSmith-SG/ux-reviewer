@@ -32,7 +32,7 @@ import agent
 DATA = Path(os.environ.get("UX_DATA_DIR") or Path(__file__).parent / "data")
 DATA.mkdir(parents=True, exist_ok=True)
 DB = DATA / "ux.db"
-PER_IP = int(os.environ.get("UX_LIMIT_PER_IP", "5"))
+PER_IP = int(os.environ.get("UX_LIMIT_PER_IP", "10"))
 PER_DAY = int(os.environ.get("UX_LIMIT_PER_DAY", "60"))
 CACHE_HOURS = 24
 TRUST_PROXY = os.environ.get("UX_TRUST_PROXY") == "1"  # за обратным прокси (домен + HTTPS)
