@@ -105,6 +105,7 @@ class PageFacts:
     images: int = 0
     images_no_alt: int = 0
     links: int = 0
+    contacts: list[str] = field(default_factory=list)
     text: str = ""
 
     def as_prompt(self) -> str:
@@ -118,6 +119,8 @@ class PageFacts:
             f"- мета-описание: {'есть' if self.description else 'НЕТ'}; язык страницы: "
             f"{self.lang or 'НЕ указан'}",
             f"- заголовков H1: {sum(h.startswith('H1:') for h in self.headings)}",
+            f"- контакты (ссылки на мессенджеры, почту, телефон): "
+            + (f"ЕСТЬ — {lst(self.contacts, 8)}" if self.contacts else "не найдены"),
         ]
         return "\n".join([
             "ПРОВЕРЕННЫЕ ФАКТЫ (посчитаны программой по HTML — не противоречь им):",
@@ -137,6 +140,12 @@ class PageFacts:
             "Видимый текст страницы (сокращённо):",
             self.text,
         ])
+
+
+_CONTACT_HREFS = (("tel:", "телефон"), ("mailto:", "почта"), ("https://t.me/", "Telegram"),
+                  ("http://t.me/", "Telegram"), ("tg://", "Telegram"), ("https://wa.me/", "WhatsApp"),
+                  ("https://api.whatsapp.com/", "WhatsApp"), ("https://vk.com/", "ВКонтакте"),
+                  ("https://vk.me/", "ВКонтакте"))
 
 
 def _clean(s: str, limit: int = 120) -> str:
@@ -184,8 +193,20 @@ def extract(url: str, html: str) -> PageFacts:
     f.images = len(imgs)
     f.images_no_alt = sum(1 for i in imgs if not str(i.get("alt", "")).strip())
     f.links = len(soup.find_all("a"))
+    for a in soup.find_all("a", href=True):
+        href = str(a["href"]).strip()
+        kind = next((k for p, k in _CONTACT_HREFS if href.lower().startswith(p)), None)
+        if kind:
+            item = f"{kind}: {_clean(a.get_text(), 40) or href.split(':', 1)[-1][:40]}"
+            if item not in f.contacts:
+                f.contacts.append(item)
     text = _clean(soup.get_text(" "), 10**9)
-    f.text = text[:MAX_TEXT] + (" …[текст обрезан]" if len(text) > MAX_TEXT else "")
+    if len(text) > MAX_TEXT:
+        # начало и конец: в конце лендингов обычно контакты и последний призыв к действию
+        head = MAX_TEXT * 2 // 3
+        f.text = text[:head] + " …[середина текста пропущена]… " + text[-(MAX_TEXT - head):]
+    else:
+        f.text = text
     if len(text) < 80 and not f.headings:
         raise PageError("На странице почти нет текста — возможно, сайт собирается скриптом "
                         "в браузере, а агент видит только исходный HTML")
@@ -286,6 +307,7 @@ _CONTRADICTS = {
     # тема рекомендации → слова в заголовке, при которых она противоречит проверенному факту
     "alt": ("alt", "альтернативн", "описания к изображ", "описания к картин", "подписи к изображ"),
     "viewport": ("адаптировать под мобил", "мобильную версию", "адаптивн", "для мобильных устройств"),
+    "contacts": ("добав", "указ", "упомян", "размест"),
 }
 
 
@@ -300,6 +322,8 @@ def _check_facts(facts: PageFacts) -> Callable[[dict[str, Any]], None]:
             if facts.has_viewport and any(w in title for w in _CONTRADICTS["viewport"]) \
                     and "проверить" not in title:
                 raise BadAnswer("совет про адаптацию под телефоны, хотя viewport есть")
+            if facts.contacts and "контакт" in title and any(w in title for w in _CONTRADICTS["contacts"]):
+                raise BadAnswer("совет добавить контакты, хотя они на странице есть")
     return check
 
 
