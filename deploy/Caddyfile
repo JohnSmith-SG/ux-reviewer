@@ -14,8 +14,9 @@ http://{$UX_DOMAIN} {
 https://{$UX_DOMAIN}:8443 {
 	encode gzip
 	reverse_proxy ux-reviewer:8080
+	# Без HSTS: он действует на весь домен без учёта порта, и браузер начинал бы
+	# сам открывать https://домен на 443, где работает другой сервис
 	header {
-		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
 	}
