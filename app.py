@@ -88,8 +88,12 @@ def _norm(url: str) -> str:
     if "://" not in url:
         url = "https://" + url
     p = urlsplit(url)
-    return urlunsplit((p.scheme.lower(), (p.hostname or "").lower(), p.path.rstrip("/") or "/",
-                       p.query, ""))
+    try:
+        port = p.port
+    except ValueError:  # «порт» не число — пусть агент сам сообщит понятную ошибку
+        return url
+    host = (p.hostname or "").lower() + (f":{port}" if port else "")
+    return urlunsplit((p.scheme.lower(), host, p.path.rstrip("/") or "/", p.query, ""))
 
 
 def _cached(url: str) -> dict[str, Any] | None:
