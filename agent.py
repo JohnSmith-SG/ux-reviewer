@@ -27,7 +27,7 @@ from openai_module import BadAnswer, LLMError, Usage, ask_json
 log = logging.getLogger("ux.agent")
 
 MAX_BYTES = 3_000_000      # страницы тяжелее не качаем
-MAX_TEXT = 7000            # столько знаков видимого текста уходит модели
+MAX_TEXT = 14000           # столько знаков видимого текста уходит модели (типичный лендинг — целиком)
 MAX_REDIRECTS = 5
 FETCH_TIMEOUT = 15
 UA = "Mozilla/5.0 (compatible; UX-Reviewer/1.0; +https://github.com/JohnSmith-SG/ux-reviewer)"
