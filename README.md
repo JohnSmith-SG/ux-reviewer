@@ -96,9 +96,8 @@ docker compose up -d --build    # или собрать локально
 Python 3.12 · openai (structured outputs) · requests · BeautifulSoup 4 · tenacity · python-dotenv ·
 FastAPI · Uvicorn · SQLite · Docker Compose · GitHub Actions · GitHub Container Registry · mypy --strict.
 
-## История
+## О проекте
 
-Финальный проект курса «VIBE-CODING и автономные агенты» (Zerocoder). Тема — «UX-рецензент сайта»,
-она выпала в рандомайзере заданий. По ТЗ требовался агент `run(url)` → плюсы, минусы и 5
-рекомендаций; сверх ТЗ добавлены веб-сервис, оценка, основания рекомендаций, проверка ответа на
-противоречия фактам, защита от SSRF, лимиты и деплой на сервер. Разработка — с ИИ-агентом Claude Code.
+Презентационный проект JohnSmith-SG — работающий ИИ-сервис полного цикла: агент, API, веб-интерфейс,
+контейнер, автосборка и деплой на собственный сервер с HTTPS. Живая версия:
+**https://ux.tsurtsumia.ru:8443**. Разработка — с ИИ-агентом Claude Code.
