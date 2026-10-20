@@ -1,12 +1,17 @@
 # Caddy — HTTPS для UX-рецензента: сам получает и продлевает сертификат Let's Encrypt.
 # Порт 443 на нашем сервере занят другим сервисом, поэтому HTTPS — на 8443,
-# а http://домен (порт 80) автоматически перенаправляет туда.
+# а http://домен (порт 80) перенаправляет туда явно (автоматический редирект Caddy ведёт на :443).
 {
 	http_port 80
 	https_port 8443
+	auto_https disable_redirects
 }
 
-{$UX_DOMAIN} {
+http://{$UX_DOMAIN} {
+	redir https://{$UX_DOMAIN}:8443{uri} permanent
+}
+
+https://{$UX_DOMAIN}:8443 {
 	encode gzip
 	reverse_proxy ux-reviewer:8080
 	header {
