@@ -24,6 +24,7 @@ from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
@@ -44,6 +45,13 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 log = logging.getLogger("ux.app")
 app = FastAPI(title="UX-рецензент сайта", version="1.0")
 _slots = threading.BoundedSemaphore(2)
+
+# Страница сервиса может жить отдельно от API (GitHub Pages) — ей разрешаем запросы к API.
+# Список адресов через запятую, например: UX_CORS_ORIGINS=https://ux.tsurtsumia.ru
+_origins = [o.strip() for o in os.environ.get("UX_CORS_ORIGINS", "").split(",") if o.strip()]
+if _origins:
+    app.add_middleware(CORSMiddleware, allow_origins=_origins, allow_methods=["GET", "POST"],
+                       allow_headers=["Content-Type"], max_age=3600)
 
 
 # ---------- база: журнал проверок + кэш ----------

@@ -231,6 +231,9 @@
 </footer>
 
 <script>
+// Страница на GitHub Pages (ux.tsurtsumia.ru) ходит в API на сервере; локально и на самом
+// сервере API там же, где страница
+const API = ({ 'ux.tsurtsumia.ru': 'https://api.tsurtsumia.ru:8443' })[location.hostname] || '';
 const $ = id => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls;
   if (text !== undefined) e.textContent = text; return e; };
@@ -246,7 +249,7 @@ function limitsText(l) {
   return `Сегодня можно проверить ещё ${l.left} из ${l.per_ip} страниц. Агент читает текст и структуру — дизайн и картинки он не видит.`;
 }
 async function showLimits() {
-  try { const r = await fetch('/api/limits'); if (r.ok) $('limits').textContent = limitsText(await r.json()); } catch (_) {}
+  try { const r = await fetch(API + '/api/limits'); if (r.ok) $('limits').textContent = limitsText(await r.json()); } catch (_) {}
 }
 
 function render(d) {
@@ -279,7 +282,7 @@ $('f').addEventListener('submit', async e => {
   $('go').disabled = true; $('errbox').hidden = true; $('report').hidden = true; $('progress').hidden = false;
   step(0); timers = [setTimeout(() => step(1), 1500), setTimeout(() => step(2), 3500)];
   try {
-    const r = await fetch('/api/review', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    const r = await fetch(API + '/api/review', { method: 'POST', headers: { 'Content-Type': 'application/json' },
                                            body: JSON.stringify({ url }) });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(typeof d.detail === 'string' ? d.detail : 'Не получилось проверить страницу');

@@ -102,5 +102,16 @@ FastAPI · Uvicorn · SQLite · Docker Compose · GitHub Actions · GitHub Conta
 ## О проекте
 
 Презентационный проект JohnSmith-SG — работающий ИИ-сервис полного цикла: агент, API, веб-интерфейс,
-контейнер, автосборка и деплой на собственный сервер с HTTPS. Живая версия:
-**https://ux.tsurtsumia.ru:8443**. Разработка — с ИИ-агентом Claude Code.
+контейнер, автосборка и деплой с HTTPS. Живая версия: **https://ux.tsurtsumia.ru**.
+Разработка — с ИИ-агентом Claude Code.
+
+```
+https://ux.tsurtsumia.ru            страница сервиса — GitHub Pages (static/, workflow pages.yml)
+        │  fetch + CORS
+        ▼
+https://api.tsurtsumia.ru:8443      API и агент — Docker на VPS за Caddy (Let's Encrypt)
+```
+
+Страница и API разделены: статическую страницу GitHub раздаёт сам, по обычному HTTPS и без
+нагрузки на сервер. На сервере остаются только агент и ключ API. Разрешение на запросы к API
+выдаётся только странице ux.tsurtsumia.ru (`UX_CORS_ORIGINS`).
