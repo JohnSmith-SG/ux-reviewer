@@ -106,11 +106,16 @@ FastAPI · Uvicorn · SQLite · Docker Compose · GitHub Actions · GitHub Conta
 Разработка — с ИИ-агентом Claude Code.
 
 ```
-https://ux.tsurtsumia.ru            страница сервиса — GitHub Pages (static/, workflow pages.yml)
+https://ux.tsurtsumia.ru            страница сервиса — GitHub Pages (static/, workflow pages.yml),
+        │                           HTTPS — через прокси Cloudflare
         │  fetch + CORS
         ▼
-https://api.tsurtsumia.ru:8443      API и агент — Docker на VPS за Caddy (Let's Encrypt)
+https://api.tsurtsumia.ru:8443      API и агент — Docker на VPS за Caddy (Let's Encrypt),
+                                    DNS only: сервис видит настоящие IP посетителей для лимитов
 ```
+
+GitHub Pages не выпускает сертификат для доменов в зоне .ru: его проверка DNS получает ServFail
+даже с DNS у Cloudflare. Поэтому сертификат для страницы выдаёт Cloudflare (режим SSL «Full»).
 
 Страница и API разделены: статическую страницу GitHub раздаёт сам, по обычному HTTPS и без
 нагрузки на сервер. На сервере остаются только агент и ключ API. Разрешение на запросы к API
